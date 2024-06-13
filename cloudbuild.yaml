@@ -7,5 +7,7 @@ steps:
           gcloud config set app/cloud_build_timeout 3600 \
           && gcloud app deploy -q --promote -v=$BUILD_ID \
           --project=$PROJECT_ID
+options:
+  logging: NONE
 
 timeout: '3600s'
