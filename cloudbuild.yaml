@@ -6,6 +6,8 @@ steps:
       - |
         gcloud config set app/cloud_build_timeout 3600 \
         && gcloud app deploy --promote --project=pgde-dev
+
 options:
-  logging: NONE
+  logging: CLOUD_LOGGING_ONLY
+
 timeout: '3600s'
