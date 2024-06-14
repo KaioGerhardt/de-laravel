@@ -1,11 +1,35 @@
 steps:
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  # Step 1: Instalar o Composer (se ainda não estiver instalado)
+  - name: 'composer:2.1.9'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        gcloud config set app/cloud_build_timeout 3600 \
-        && gcloud app deploy --promote --project=pgde-dev
+        curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+  # Step 2: Instalar as dependências do Composer
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        composer install --no-dev --optimize-autoloader
+
+  # Step 3: Configurar o ambiente de build para PHP 8
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud config set app/cloud_build_timeout 3600
+
+  # Step 4: Deploy da aplicação Laravel para o Google App Engine
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud app deploy --quiet --promote --stop-previous-version --project=pgde-dev
 
 options:
   logging: CLOUD_LOGGING_ONLY
