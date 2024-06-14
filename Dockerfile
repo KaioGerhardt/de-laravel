@@ -1,39 +1,18 @@
-# Use a imagem oficial do PHP para o ambiente de produção
-FROM php:8.1-apache
+FROM php:7.4-fpm-alpine
 
-# Atualiza o sistema e instala dependências necessárias
-RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    libzip-dev \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache nginx wget
 
-# Instala extensões PHP necessárias
-RUN docker-php-ext-install zip pdo_mysql
+RUN mkdir -p /run/nginx
 
-# Define o diretório de trabalho como /var/www/html
-WORKDIR /var/www/html
+COPY docker/nginx.conf /etc/nginx/nginx.conf
 
-# Copia os arquivos do projeto Laravel para o diretório de trabalho no container
-COPY . .
+RUN mkdir -p /app
+COPY . /app
 
-# Instala as dependências do Composer sem pacotes de desenvolvimento
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN sh -c "wget http://getcomposer.org/composer.phar && chmod a+x composer.phar && mv composer.phar /usr/local/bin/composer"
+RUN cd /app && \
+    /usr/local/bin/composer install --no-dev
 
-# Define as permissões necessárias para a aplicação Laravel
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chown -R www-data: /app
 
-# Configura o DocumentRoot do Apache para apontar para a pasta 'public'
-RUN sed -i -e 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
-RUN a2enmod rewrite
-
-# Define a variável de ambiente para o DocumentRoot do Apache
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-
-# Expõe a porta 8080 para o tráfego HTTP, conforme esperado pelo Cloud Run
-EXPOSE 8080
-
-# Comando padrão para iniciar o servidor Apache
-CMD ["apache2-foreground"]
+CMD sh /app/docker/startup.sh
