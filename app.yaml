@@ -7,6 +7,7 @@ runtime_config:
 # Ensure we skip ".env", which is only for local development
 skip_files: 
   - .env
+  - vendor
 
 automatic_scaling:
   min_num_instances: 1
